@@ -87,3 +87,6 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+export_aws_credentials.sh
+
