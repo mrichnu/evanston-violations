@@ -3,9 +3,9 @@ from __future__ import print_function
 import boto3
 import csv
 import requests
-import pprint
 
 TABLE_NAME = 'Violations'
+SNS_TOPIC = 'arn:aws:sns:us-east-1:149274529018:evanston-violations'
 
 all_data_url = "http://data.cityofevanston.org/rest/datastreams/{0}/data.csv"
 violations_data_id = 83966
@@ -77,8 +77,10 @@ def output(violation):
         name = violation['name']
     else:
         name = violation['business_id']
-    print("{0}: {1} on {2}".format(name, violation['code'], violation['date']))
 
+    message = "{0}: {1} on {2}".format(name, violation['code'], violation['date'])
+    sns = boto3.client('sns')
+    resp = sns.publish(TopicArn=SNS_TOPIC, Message=message)
 
 def get_item(violation):
     item = {
@@ -112,7 +114,6 @@ def main():
             output(violation)
             save(dynamodb, violation)
         else:
-            print("Seen this one already.")
             break
 
 if __name__ == '__main__':
