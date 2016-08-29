@@ -27,7 +27,7 @@ def merge(violations, businesses):
         try:
             b = d[violation['business_id']]
             for c in cols:
-                d[c] = b[c]
+                violation[c] = b[c]
         except KeyError:
             pass
 
