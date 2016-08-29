@@ -3,17 +3,26 @@ from __future__ import print_function
 import boto3
 import csv
 import requests
+import pprint
 
-url = "http://data.cityofevanston.org/rest/datastreams/{0}/data.csv" 
+TABLE_NAME = 'Violations'
+
+all_data_url = "http://data.cityofevanston.org/rest/datastreams/{0}/data.csv"
 violations_data_id = 83966
 business_data_id = 83968
 
+recent_violations_url = \
+        "http://www.civicdata.com/api/3/action/datastore_search?resource_id=f230b8d9-5605-422c-a2eb-dac203f62edb&sort=_id+DESC&limit=50"
+
+business_info_url = \
+        "http://www.civicdata.com/api/3/action/datastore_search?resource_id=1c15c579-989f-43cb-b513-67b6e3971990&q={0}&limit=1"
+
 def download_all_violations():
-    r = requests.get(url.format(violations_data_id))
+    r = requests.get(all_data_url.format(violations_data_id))
     return list(csv.DictReader(r.text.encode('utf-8').split("\n")))
 
 def download_all_businesses():
-    r = requests.get(url.format(business_data_id))
+    r = requests.get(all_data_url.format(business_data_id))
     return list(csv.DictReader(r.text.encode('utf-8').split("\n")))
 
 def merge(violations, businesses):
@@ -33,10 +42,35 @@ def merge(violations, businesses):
 
     return violations
 
-def in_db(dynamodb, violation):
-    table = dynamodb.Table('Violations')
-    resp = table.get_item(Key={'id': violation['_id']})
-    return 'Item' in resp
+def get_current_max_violation_id(dynamodb):
+    resp = dynamodb.query(
+        TableName = TABLE_NAME,
+        Limit = 1,
+        KeyConditionExpression = "#k = :key",
+        ExpressionAttributeNames = {
+            "#k": "_id"
+        },
+        ExpressionAttributeValues = {
+            ":key": {'S': 'violation'}
+        },
+        ScanIndexForward = False
+    )
+    return int(resp['Items'][0]['id']['N'])
+
+def download_recent_violations():
+    r = requests.get(recent_violations_url)
+    data = r.json()
+    return data['result']['records']
+
+def merge_business_info(violation):
+    url = business_info_url.format(violation['business_id'])
+    r = requests.get(url)
+    data = r.json()
+    if data['result']['records']:
+        b = data['result']['records'][0]
+        cols = ['name', 'address', 'city', 'state', 'postal_code', 'LAT', 'LON']
+        for c in cols:
+            violation[c] = b[c]
 
 def output(violation):
     if 'name' in violation:
@@ -45,36 +79,40 @@ def output(violation):
         name = violation['business_id']
     print("{0}: {1} on {2}".format(name, violation['code'], violation['date']))
 
+
+def get_item(violation):
+    item = {
+        '_id': {'S': 'violation'},
+        'id': {'N': str(violation['_id'])},
+    }
+    cols = ['business_id', 'date', 'code', 'description', 'name', 'address',
+            'postal_code', 'lat', 'lon']
+    for c in cols:
+        if c in violation and violation[c]:
+            item[c] = {'S': violation[c]}
+    return item
+
 def save(dynamodb, violation):
-    table = dynamodb.Table('Violations')
-    table.put_item(Item={
-        'id': violation['_id'],
-        'name': violation.get('name', None),
-        'address': violation.get('address', None),
-        'postal_code': violation.get('postal_code', None),
-        'lat': violation.get('LAT', None),
-        'lon': violation.get('LON', None),
-        'business_id': violation['business_id'],
-        'date': violation['date'],
-        'code': violation['code'],
-        'description': violation['description'],
-        })
+    item = get_item(violation)
+    dynamodb.put_item(
+        TableName=TABLE_NAME,
+        Item=item
+    )
 
 def main():
-    violations = download_all_violations()
-    businesses = download_all_businesses()
-    violations = merge(violations, businesses)
+    dynamodb = boto3.client('dynamodb', region_name='us-east-1')
 
-    dynamodb = boto3.resource("dynamodb", region_name='us-east-1',
-            endpoint_url="http://localhost:8000")
+    current_max_id = get_current_max_violation_id(dynamodb)
 
-    count = 0
+    violations = download_recent_violations()
+
     for violation in violations:
-        if not in_db(dynamodb, violation):
+        if violation['_id'] > current_max_id:
+            merge_business_info(violation)
             output(violation)
             save(dynamodb, violation)
-        count += 1
-        if count >= 10:
+        else:
+            print("Seen this one already.")
             break
 
 if __name__ == '__main__':
