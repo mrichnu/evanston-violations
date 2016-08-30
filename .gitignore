@@ -89,4 +89,5 @@ ENV/
 .ropeproject
 
 export_aws_credentials.sh
-
+secrets.py
+build_tweeter/
