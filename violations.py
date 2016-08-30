@@ -3,6 +3,7 @@ from __future__ import print_function
 import boto3
 import csv
 import requests
+import json
 
 TABLE_NAME = 'Violations'
 SNS_TOPIC = 'arn:aws:sns:us-east-1:149274529018:evanston-violations'
@@ -73,12 +74,7 @@ def merge_business_info(violation):
             violation[c] = b[c]
 
 def output(violation):
-    if 'name' in violation:
-        name = violation['name']
-    else:
-        name = violation['business_id']
-
-    message = "{0}: {1} on {2}".format(name, violation['code'], violation['date'])
+    message = json.dumps(violation)
     sns = boto3.client('sns')
     resp = sns.publish(TopicArn=SNS_TOPIC, Message=message)
 
