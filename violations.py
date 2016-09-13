@@ -80,14 +80,14 @@ def output(violation):
 
 def get_item(violation):
     item = {
-        '_id': {'S': 'violation'},
-        'id': {'N': str(violation['_id'])},
+        'business_id': violation['business_id'],
+        'id': int(violation['_id']),
     }
-    cols = ['business_id', 'date', 'code', 'description', 'name', 'address',
-            'postal_code', 'lat', 'lon']
+    cols = ['date', 'code', 'description', 'name', 'address', 'postal_code',
+            'lat', 'lon']
     for c in cols:
         if c in violation and violation[c]:
-            item[c] = {'S': violation[c]}
+            item[c] = violation[c]
     return item
 
 def save(dynamodb, violation):
