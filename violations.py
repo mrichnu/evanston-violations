@@ -37,7 +37,7 @@ def merge(violations, businesses):
         try:
             b = d[violation['business_id']]
             for c in cols:
-                violation[c] = b[c]
+                violation[c.lower()] = b[c]
         except KeyError:
             pass
 
@@ -71,7 +71,7 @@ def merge_business_info(violation):
         b = data['result']['records'][0]
         cols = ['name', 'address', 'city', 'state', 'postal_code', 'LAT', 'LON']
         for c in cols:
-            violation[c] = b[c]
+            violation[c.lower()] = b[c]
 
 def output(violation):
     message = json.dumps(violation)
