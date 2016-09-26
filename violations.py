@@ -89,6 +89,9 @@ def get_item(violation):
     for c in cols:
         if c in violation and violation[c]:
             item[c] = violation[c]
+            if c == 'name':
+                item['name_normalized'] = item['name'].lower().strip()
+
     return item
 
 def save(dynamodb, violation):
