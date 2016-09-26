@@ -82,6 +82,7 @@ def get_item(violation):
     item = {
         'business_id': violation['business_id'],
         'id': int(violation['_id']),
+        'type': 'violation',
     }
     cols = ['date', 'code', 'description', 'name', 'address', 'postal_code',
             'lat', 'lon']

@@ -26,12 +26,29 @@ def create_table(dynamodb):
             ],
             AttributeDefinitions=[
                 {'AttributeName': 'business_id', 'AttributeType': 'S'},
+                {'AttributeName': 'type', 'AttributeType': 'S'},
                 {'AttributeName': 'id', 'AttributeType': 'N'},
             ],
             ProvisionedThroughput={
                 'ReadCapacityUnits': 2,
                 'WriteCapacityUnits': 25 
-            }
+            },
+            GlobalSecondaryIndexes=[
+                {
+                    'IndexName': 'idx_violation_id',
+                    'KeySchema': [
+                        {'AttributeName': 'type', 'KeyType': 'HASH'},
+                        {'AttributeName': 'id', 'KeyType': 'RANGE'}
+                    ],
+                    'Projection': {
+                        'ProjectionType': 'ALL'
+                    },
+                    'ProvisionedThroughput': {
+                        'ReadCapacityUnits': 2,
+                        'WriteCapacityUnits': 25 
+                    },
+                }
+            ],
     )
 
     table.meta.client.get_waiter('table_exists').wait(TableName=TABLE_NAME)
@@ -58,8 +75,19 @@ def reset_provisioned_throughput(client):
         TableName=TABLE_NAME,
         ProvisionedThroughput={
             'ReadCapacityUnits': 2,
-            'WriteCapacityUnits': 10
-        }
+            'WriteCapacityUnits': 5
+        },
+        GlobalSecondaryIndexUpdates=[
+            {
+                'Update': {
+                    'IndexName': 'idx_violation_id',
+                    'ProvisionedThroughput': {
+                        'ReadCapacityUnits': 2,
+                        'WriteCapacityUnits': 5 
+                    },
+                },
+            },
+        ],
     )
     print("Provisioned throughput successfully reset.")
 
