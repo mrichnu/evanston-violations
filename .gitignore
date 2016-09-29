@@ -92,3 +92,8 @@ export_aws_credentials.sh
 secrets.py
 build_tweeter/
 chalice-app/.chalice/
+ssl/
+
+webapp/node_modules/
+webapp/dist/
+webapp/npm-debug.log
