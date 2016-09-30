@@ -3,11 +3,16 @@
   <head>
     <meta charset="utf-8">
     <title>webapp</title>
-    <script src="https://unpkg.com/vue@next/dist/vue.js"></script>
-    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="dist/vue.min.js"></script>
+    <script src="dist/vue-router.min.js"></script>
+    <script src="dist/jquery-3.1.1.min.js"></script>
   </head>
   <body>
-    <div id="app"><p>{{ violations.length }}</p></div>
+    <div id="app">
+      <ul id="recentviolations">
+        <violation-item v-for="v in violations" v-bind:violation="v"></violation-item>
+      </ul>
+    </div>
     <script src="dist/build.js"></script>
   </body>
 </html>

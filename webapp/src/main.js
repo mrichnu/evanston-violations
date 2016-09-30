@@ -15,6 +15,19 @@ var violationsStore = {
   }
 }
 
+Vue.component('violation-item', {
+  props: ['violation'],
+  template: '<li>{{ datestr }} {{ violation.name }}: <span>{{ violation.description }}</span></li>',
+  computed: {
+    datestr: function() {
+      var y = this.violation.date.substring(0, 4);
+      var m = this.violation.date.substring(4, 6);
+      var d = this.violation.date.substring(6, 8);
+      return `${m}/${d}/${y}`;
+    },
+  },
+});
+
 var app = new Vue({
   el: '#app',
   data: violationsStore.state,
