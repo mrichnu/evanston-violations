@@ -16,15 +16,30 @@
 
   <script id="home-template" type="text/x-handlebars-template">
     <h1>{{title}}</h1>
+    <form>
+      <label for="search">Search: <input type="text" id="search"></label>
+    </form>
     <div class="body">
       {{{body}}}
     </div>
   </script>
 
+  <script id="loading-template" type="text/x-handlebars-template">
+    <img src="/img/default.gif">
+  </script>
+
   <script id="business-template" type="text/x-handlebars-template">
-    <h1>{{title}}</h1>
+    <h1>All {{name}} violations</h1>
+    <p>{{address}}</p>
     <div class="body">
-      {{{body}}}
+      <table class="violations-table">
+      {{#violations}}
+        <tr>
+          <td class="violation-date">{{friendlyDate date}}</td>
+          <td class="violation-description">{{description}}</td>
+        </tr>
+      {{/violations}}
+      </table>
     </div>
     <a href="/" data-navigo>Home</a>
   </script> 

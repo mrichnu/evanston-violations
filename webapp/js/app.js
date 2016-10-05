@@ -31,6 +31,10 @@ Handlebars.registerHelper('friendlyDate', function(date) {
   return parseInt(date.substring(4, 6)) + '/' + parseInt(date.substring(6, 8)) + '/' + date.substring(0, 4);
 });
 
+function displayLoading(router, templates) {
+  $('#app').html(templates.loading({}));
+  router.updatePageLinks();
+}
 
 function displayHome(router, templates) {
   var context = { title: "Latest Violations", body: '<img src="/img/default.gif">' };
@@ -46,12 +50,13 @@ function displayHome(router, templates) {
 }
 
 function displayBusiness(router, templates, id) {
-  var context = { title: id, body: '<img src="/img/default.gif">' };
-  var html = templates.business(context);
-  $('#app').html(html);
-  router.updatePageLinks();
+  displayLoading(router, templates);
   violationsStore.fetchSingleBusinessViolations(id, function() {
-    context.body = templates.violationList({violations: violationsStore.state.violations});
+    var context = {
+      name: violationsStore.state.violations[0].name,
+      address: violationsStore.state.violations[0].address,
+      violations: violationsStore.state.violations
+    };   
     html = templates.business(context);
     $('#app').html(html);
     router.updatePageLinks();
@@ -61,6 +66,7 @@ function displayBusiness(router, templates, id) {
 $(document).ready(function() {
   var templates = {};
   templates.home = Handlebars.compile($("#home-template").html());
+  templates.loading = Handlebars.compile($("#loading-template").html());
   templates.business = Handlebars.compile($("#business-template").html());
   templates.violationList = Handlebars.compile($("#violations-list-template").html());
   
