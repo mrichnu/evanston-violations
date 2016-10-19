@@ -36,15 +36,42 @@ function displayLoading(router, templates) {
   router.updatePageLinks();
 }
 
+function setupSearch() {
+  var awesomplete = new Awesomplete(document.getElementById("search"));
+  $('#search').on('keyup', function(evt) {
+    if (evt.which == 40) {
+      // down arrow
+      return;
+    }
+    var searchString = $(evt.target).val();
+    if (searchString.length < 3) {
+      return;
+    }
+    $.ajax(latestViolationsUrl + 'search?s=' + searchString, {
+      // need to do this to force CORS preflight OPTIONS request
+      contentType: "application/json"
+    })
+    .done(function (data) {
+      var list = [];
+      for (var key in data) {
+        list.push({label: key, value: data[key]})
+      }
+      awesomplete.list = list;
+      });
+    });
+}
+
 function displayHome(router, templates) {
   var context = { title: "Latest Violations", body: '<img src="/img/default.gif">' };
   var html = templates.home(context);
   $('#app').html(html);
+  setupSearch();
   router.updatePageLinks();
   violationsStore.fetchRecent(function() {
     context.body = templates.violationList({violations: violationsStore.state.violations});
     html = templates.home(context);
     $('#app').html(html);
+    setupSearch();
     router.updatePageLinks();
   });
 }
@@ -71,6 +98,11 @@ $(document).ready(function() {
   templates.violationList = Handlebars.compile($("#violations-list-template").html());
   
   var router = new Navigo();
+
+  window.addEventListener("awesomplete-selectcomplete", function(e) {
+    router.navigate('/business/' + $('#search').val() + '/');
+  }, false);
+
   router
   .on(function () {
     displayHome(router, templates);

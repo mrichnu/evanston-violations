@@ -6,8 +6,11 @@
     <script src="js/navigo.min.js"></script>
     <script src="js/jquery-3.1.1.min.js"></script>
     <script src="js/handlebars.min-v4.0.5.js"></script>
+    <script src="js/awesomplete.js"></script>
+    <link rel="stylesheet" href="css/awesomplete.css" />
   </head>
   <body>
+    
     <div id="app">
       
     </div>
@@ -17,7 +20,7 @@
   <script id="home-template" type="text/x-handlebars-template">
     <h1>{{title}}</h1>
     <form>
-      <label for="search">Search: <input type="text" id="search"></label>
+      Search: <input autofocus id="search" class="awesomplete" data-list="Ada, Java, JavaScript, Brainfuck, LOLCODE, Node.js, Ruby on Rails" />
     </form>
     <div class="body">
       {{{body}}}

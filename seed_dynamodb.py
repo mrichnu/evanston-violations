@@ -19,36 +19,36 @@ def drop_table(dynamodb):
 
 def create_table(dynamodb):
     table = dynamodb.create_table(
-            TableName=TABLE_NAME,
-            KeySchema=[
-                {'AttributeName': 'business_id', 'KeyType': 'HASH'},
-                {'AttributeName': 'id', 'KeyType': 'RANGE'},
-            ],
-            AttributeDefinitions=[
-                {'AttributeName': 'business_id', 'AttributeType': 'S'},
-                {'AttributeName': 'type', 'AttributeType': 'S'},
-                {'AttributeName': 'id', 'AttributeType': 'N'},
-            ],
-            ProvisionedThroughput={
-                'ReadCapacityUnits': 2,
-                'WriteCapacityUnits': 25 
-            },
-            GlobalSecondaryIndexes=[
-                {
-                    'IndexName': 'idx_violation_id',
-                    'KeySchema': [
-                        {'AttributeName': 'type', 'KeyType': 'HASH'},
-                        {'AttributeName': 'id', 'KeyType': 'RANGE'}
-                    ],
-                    'Projection': {
-                        'ProjectionType': 'ALL'
-                    },
-                    'ProvisionedThroughput': {
-                        'ReadCapacityUnits': 2,
-                        'WriteCapacityUnits': 25 
-                    },
-                }
-            ],
+        TableName=TABLE_NAME,
+        KeySchema=[
+            {'AttributeName': 'business_id', 'KeyType': 'HASH'},
+            {'AttributeName': 'id', 'KeyType': 'RANGE'},
+        ],
+        AttributeDefinitions=[
+            {'AttributeName': 'business_id', 'AttributeType': 'S'},
+            {'AttributeName': 'type', 'AttributeType': 'S'},
+            {'AttributeName': 'id', 'AttributeType': 'N'},
+        ],
+        ProvisionedThroughput={
+            'ReadCapacityUnits': 20,
+            'WriteCapacityUnits': 25
+        },
+        GlobalSecondaryIndexes=[
+            {
+                'IndexName': 'idx_violation_id',
+                'KeySchema': [
+                    {'AttributeName': 'type', 'KeyType': 'HASH'},
+                    {'AttributeName': 'id', 'KeyType': 'RANGE'}
+                ],
+                'Projection': {
+                    'ProjectionType': 'ALL'
+                },
+                'ProvisionedThroughput': {
+                    'ReadCapacityUnits': 5,
+                    'WriteCapacityUnits': 25
+                },
+            }
+        ],
     )
 
     table.meta.client.get_waiter('table_exists').wait(TableName=TABLE_NAME)
@@ -74,7 +74,7 @@ def reset_provisioned_throughput(client):
     client.update_table(
         TableName=TABLE_NAME,
         ProvisionedThroughput={
-            'ReadCapacityUnits': 2,
+            'ReadCapacityUnits': 20,
             'WriteCapacityUnits': 5
         },
         GlobalSecondaryIndexUpdates=[
@@ -82,8 +82,8 @@ def reset_provisioned_throughput(client):
                 'Update': {
                     'IndexName': 'idx_violation_id',
                     'ProvisionedThroughput': {
-                        'ReadCapacityUnits': 2,
-                        'WriteCapacityUnits': 5 
+                        'ReadCapacityUnits': 5,
+                        'WriteCapacityUnits': 5
                     },
                 },
             },
