@@ -5,7 +5,8 @@ import csv
 import requests
 import json
 
-TABLE_NAME = 'Violations'
+TABLE_NAME = 'ev-violations'
+BUSINESS_TABLE_NAME = 'ev-businesses'
 SNS_TOPIC = 'arn:aws:sns:us-east-1:149274529018:evanston-violations'
 
 all_data_url = "http://data.cityofevanston.org/rest/datastreams/{0}/data.csv"
@@ -89,6 +90,19 @@ def get_item(violation):
     for c in cols:
         if c in violation and violation[c]:
             item[c] = violation[c]
+            if c == 'name':
+                item['name_normalized'] = item['name'].lower().strip()
+
+    return item
+
+def get_business_item(business):
+    item = {}
+
+    cols = ['business_id', 'name', 'address', 'city', 'state', 'postal_code', 'LAT', 'LON']
+
+    for c in cols:
+        if c in business and business[c]:
+            item[c.lower()] = business[c]
             if c == 'name':
                 item['name_normalized'] = item['name'].lower().strip()
 
