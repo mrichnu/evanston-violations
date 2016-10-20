@@ -62,7 +62,7 @@ function setupSearch() {
 }
 
 function displayHome(router, templates) {
-  var context = { title: "Latest Violations", body: '<img src="/img/default.gif">' };
+  var context = { title: "Evanston Inspection Violations", body: '<img src="/img/default.gif">' };
   var html = templates.home(context);
   $('#app').html(html);
   setupSearch();

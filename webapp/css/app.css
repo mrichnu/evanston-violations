@@ -1,0 +1,17 @@
+.violation-date {
+    width: 12%;
+}
+
+.violation-business-name {
+    width: 20%;
+}
+
+.nav {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    padding-left: 15px;
+}
+
+.nav a {
+    font-size: 18px;
+}
