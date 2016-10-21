@@ -1,10 +1,13 @@
 #!/usr/bin/python
 from __future__ import print_function
 import boto3
+from boto3.dynamodb.conditions import Key, Attr
+from collections import defaultdict
 import csv
 import requests
 import json
 
+REGION = 'us-east-1'
 TABLE_NAME = 'ev-violations'
 BUSINESS_TABLE_NAME = 'ev-businesses'
 SNS_TOPIC = 'arn:aws:sns:us-east-1:149274529018:evanston-violations'
@@ -45,37 +48,40 @@ def merge(violations, businesses):
     return violations
 
 def get_current_max_violation_id(dynamodb):
-    resp = dynamodb.query(
-        TableName = TABLE_NAME,
-        Limit = 1,
-        KeyConditionExpression = "#k = :key",
-        ExpressionAttributeNames = {
-            "#k": "_id"
-        },
-        ExpressionAttributeValues = {
-            ":key": {'S': 'violation'}
-        },
-        ScanIndexForward = False
+    table = dynamodb.Table(TABLE_NAME)
+    resp = table.query(
+        IndexName='idx_violation_id',
+        KeyConditionExpression=Key('type').eq('violation'),
+        Limit=1,
+        ScanIndexForward=False,
     )
-    return int(resp['Items'][0]['id']['N'])
+    return int(resp['Items'][0]['id'])
+
+def get_or_update_business(dynamodb, business_id):
+    table = dynamodb.Table(BUSINESS_TABLE_NAME)
+    resp = table.get_item(Key={'business_id': business_id})
+    try:
+        return resp['Item']
+    except KeyError:
+        # not found
+        pass
+
+    url = business_info_url.format(business_id)
+    r = requests.get(url)
+    data = r.json()
+    if data['result']['records']:
+        business = get_business_item(data['result']['records'][0])
+        table.put_item(Item=business)
+
+    return business
 
 def download_recent_violations():
     r = requests.get(recent_violations_url)
     data = r.json()
     return data['result']['records']
 
-def merge_business_info(violation):
-    url = business_info_url.format(violation['business_id'])
-    r = requests.get(url)
-    data = r.json()
-    if data['result']['records']:
-        b = data['result']['records'][0]
-        cols = ['name', 'address', 'city', 'state', 'postal_code', 'LAT', 'LON']
-        for c in cols:
-            violation[c.lower()] = b[c]
-
-def output(violation):
-    message = json.dumps(violation)
+def output(business_id, violations):
+    message = json.dumps({'business_id': business_id, 'violations': violations})
     sns = boto3.client('sns')
     resp = sns.publish(TopicArn=SNS_TOPIC, Message=message)
 
@@ -90,8 +96,6 @@ def get_item(violation):
     for c in cols:
         if c in violation and violation[c]:
             item[c] = violation[c]
-            if c == 'name':
-                item['name_normalized'] = item['name'].lower().strip()
 
     return item
 
@@ -110,25 +114,29 @@ def get_business_item(business):
 
 def save(dynamodb, violation):
     item = get_item(violation)
-    dynamodb.put_item(
-        TableName=TABLE_NAME,
-        Item=item
-    )
+    table = dynamodb.Table(TABLE_NAME)
+    table.put_item(Item=item)
 
 def main():
-    dynamodb = boto3.client('dynamodb', region_name='us-east-1')
+    dynamodb = boto3.resource('dynamodb', region_name=REGION)
 
     current_max_id = get_current_max_violation_id(dynamodb)
 
     violations = download_recent_violations()
 
+    unseen = defaultdict(list)
+
     for violation in violations:
         if violation['_id'] > current_max_id:
-            merge_business_info(violation)
-            output(violation)
+            business = get_or_update_business(dynamodb, violation['business_id'])
+            violation.update(business)
+            unseen[violation['business_id']].append(violation)
             save(dynamodb, violation)
         else:
             break
+        
+    for business_id, violations in unseen.iteritems():
+        output(business_id, violations)
 
 if __name__ == '__main__':
     main()
