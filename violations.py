@@ -12,9 +12,8 @@ TABLE_NAME = 'ev-violations'
 BUSINESS_TABLE_NAME = 'ev-businesses'
 SNS_TOPIC = 'arn:aws:sns:us-east-1:149274529018:evanston-violations'
 
-all_data_url = "http://data.cityofevanston.org/rest/datastreams/{0}/data.csv"
-violations_data_id = 83966
-business_data_id = 83968
+all_business_url = 'http://www.civicdata.com/api/3/action/datastore_search?resource_id=1c15c579-989f-43cb-b513-67b6e3971990&limit=1000'
+all_violations_url = 'http://www.civicdata.com/api/3/action/datastore_search?resource_id=f230b8d9-5605-422c-a2eb-dac203f62edb&sort=_id+DESC&limit=50000'
 
 recent_violations_url = \
         "http://www.civicdata.com/api/3/action/datastore_search?resource_id=f230b8d9-5605-422c-a2eb-dac203f62edb&sort=_id+DESC&limit=50"
@@ -23,17 +22,17 @@ business_info_url = \
         "http://www.civicdata.com/api/3/action/datastore_search?resource_id=1c15c579-989f-43cb-b513-67b6e3971990&q={0}&limit=1"
 
 def download_all_violations():
-    r = requests.get(all_data_url.format(violations_data_id))
-    return list(csv.DictReader(r.text.encode('utf-8').split("\n")))
+    r = requests.get(all_violations_url, verify=False)
+    return r.json()['result']['records']
 
 def download_all_businesses():
-    r = requests.get(all_data_url.format(business_data_id))
-    return list(csv.DictReader(r.text.encode('utf-8').split("\n")))
+    r = requests.get(all_business_url, verify=False)
+    return r.json()['result']['records']
 
 def merge(violations, businesses):
     # make a map of business id to name
     d = {}
-    cols = ['name', 'address', 'city', 'state', 'postal_code', 'LAT', 'LON']
+    cols = ['name', 'address', 'city', 'state', 'postal_code', 'LON', 'LAT']
     for b in businesses:
         d[b['business_id']] = b
 
